@@ -1,0 +1,40 @@
+using UnityEngine;
+
+public class MouseLook : MonoBehaviour
+{
+    // How sensitive the mouse movement is (higher = faster rotation)
+    [SerializeField] private float mouseSensitivity = 100f;
+
+    // Reference to the player's body (so we can rotate the player left/right)
+    [SerializeField] private Transform playerBody;
+
+    // Keeps track of how much the camera is rotated up/down
+    private float xRotation = 0f;
+
+    void Start()
+    {
+        // Lock the cursor to the center of the screen and hide it
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+
+    void Update()
+    {
+        // Get mouse movement values (X = left/right, Y = up/down)
+        // Multiply by sensitivity and frame time for smooth movement
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+
+        // Invert the mouse Y to look up/down correctly
+        xRotation -= mouseY;
+
+        // Clamp rotation so the player can't rotate past straight up or down
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+
+        // Apply up/down rotation only to the camera
+        transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+
+        // Rotate the player's body left/right
+        playerBody.Rotate(Vector3.up * mouseX);
+    }
+}
+
