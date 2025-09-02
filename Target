@@ -1,0 +1,27 @@
+using UnityEngine;
+
+public class Target : MonoBehaviour
+{
+    // Health value for this object (can be set in Inspector)
+    public float health = 50f;
+
+    // Called by other scripts (e.g., Gun) to apply damage
+    public void TakeDamage(float amount)
+    {
+        // Subtract the incoming damage amount from current health
+        health -= amount;
+
+        // If health is depleted, call Die()
+        if (health <= 0f)
+        {
+            Die();
+        }
+    }
+
+    // Handles what happens when this object "dies"
+    void Die()
+    {
+        // Destroy the object from the scene
+        Destroy(gameObject);
+    }
+}
