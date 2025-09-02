@@ -1,0 +1,97 @@
+using UnityEngine;
+using UnityEngine.UI; // Needed for UI
+using TMPro; // Add this at the top
+
+
+public class Gun : MonoBehaviour
+{
+    [Header("Gun Settings")]
+    public Camera fpsCam;
+    public float range = 100f;
+    public float damage = 20f;
+    public ParticleSystem muzzleFlash;
+    public GameObject impactEffect;
+
+    [Header("Ammo Settings")]
+    public int maxAmmo = 30;   // Bullets per magazine
+    private int currentAmmo;   // Bullets left
+    public float reloadTime = 1.5f; // Seconds to reload
+    private bool isReloading = false;
+
+    [Header("UI")]
+    public TextMeshProUGUI ammoText; // Assign in Inspector
+
+    void Start()
+    {
+        currentAmmo = maxAmmo; // Start full
+        UpdateAmmoUI();
+    }
+
+    void Update()
+    {
+        if (isReloading) return;
+
+        // Reload if out of ammo
+        if (currentAmmo <= 0)
+        {
+            StartCoroutine(Reload());
+            return;
+        }
+
+        // Shoot input
+        if (Input.GetButtonDown("Fire1"))
+        {
+            Shoot();
+        }
+    }
+
+    void Shoot()
+    {
+        if (muzzleFlash != null)
+        {
+            muzzleFlash.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            muzzleFlash.Play();
+        }
+
+        currentAmmo--; // Use one bullet
+        UpdateAmmoUI();
+
+        RaycastHit hit;
+        if (Physics.Raycast(fpsCam.transform.position, fpsCam.transform.forward, out hit, range))
+        {
+            Debug.Log(hit.transform.name);
+
+            Target target = hit.transform.GetComponent<Target>();
+            if (target != null)
+            {
+                target.TakeDamage(damage);
+            }
+
+            if (impactEffect != null)
+            {
+                GameObject impactGO = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
+                Destroy(impactGO, 2f);
+            }
+        }
+    }
+
+    System.Collections.IEnumerator Reload()
+    {
+        isReloading = true;
+        Debug.Log("Reloading...");
+        // You can play reload animation here
+        yield return new WaitForSeconds(reloadTime);
+
+        currentAmmo = maxAmmo;
+        UpdateAmmoUI();
+        isReloading = false;
+    }
+
+    void UpdateAmmoUI()
+    {
+        if (ammoText != null)
+        {
+            ammoText.text = currentAmmo + " / " + maxAmmo;
+        }
+    }
+}
