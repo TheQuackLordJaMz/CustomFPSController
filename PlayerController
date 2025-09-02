@@ -1,0 +1,64 @@
+using UnityEngine;
+
+public class PlayerController : MonoBehaviour
+{
+    // Reference to the CharacterController component
+    // This handles movement and collision detection without rigidbodies
+    public CharacterController controller;
+
+    // Player's walking speed
+    public float speed = 12f;
+
+    // Gravity force (negative value to pull the player down)
+    public float gravity = -9.81f;
+
+    // Keeps track of player's vertical velocity (falling/jumping)
+    Vector3 velocity;
+
+    // ===== Ground Check Variables =====
+    public Transform groundCheck;   // Empty GameObject placed at the player's feet
+    public float groundDistance = 0.4f; // Radius of the sphere for ground detection
+    public LayerMask groundMask;    // Defines what counts as "ground" (e.g., terrain, floor)
+
+    // Boolean to check if the player is currently touching the ground
+    public bool isGrounded;
+
+    void Update()
+    {
+        // Cast a small invisible sphere at the player's feet
+        // If it touches the ground layer, the player is grounded
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+
+        // If grounded and the player is moving downwards,
+        // reset vertical velocity so gravity doesn't stack infinitely
+        if (isGrounded && velocity.y < 0f)
+        {
+            velocity.y = -5f; // Small negative value keeps player "stuck" to ground
+        }
+
+        // Handle player movement input every frame
+        MovementInput();
+    }
+
+    void MovementInput()
+    {
+        // Get keyboard input:
+        // A/D or Left/Right arrows → Horizontal
+        // W/S or Up/Down arrows → Vertical
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
+
+        // Convert input into movement relative to player’s facing direction
+        // (forward/back and right/left movement)
+        Vector3 move = transform.right * x + transform.forward * z;
+
+        // Apply gravity over time (affects vertical velocity)
+        velocity.y += gravity * Time.deltaTime;
+
+        // Move the player horizontally (on the XZ plane)
+        controller.Move(move * speed * Time.deltaTime);
+
+        // Apply vertical movement (falling/jumping) separately
+        controller.Move(velocity * Time.deltaTime);
+    }
+}
