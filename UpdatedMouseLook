@@ -1,0 +1,42 @@
+using UnityEngine; 
+
+public class MouseLook : MonoBehaviour
+{
+    // Sensitivity of the mouse movement, controls how fast the camera rotates.
+    public float mouseSense = 100f;
+
+    // Reference to the player's body transform, used to rotate the player horizontally.
+    public Transform playerBody;
+
+    // Variable to track the vertical rotation of the camera.
+    private float xRotation = 0f;
+
+    // Limits for the vertical rotation of the camera to prevent over-rotation.
+    public float topClamp = -90f; // Upper limit (looking down).
+    public float bottomClamp = 90f; // Lower limit (looking up).
+
+    private void Start()
+    {
+        // Lock the cursor to the center of the screen and make it invisible.
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+
+    void Update()
+    {
+        // Get the mouse movement input for both X (horizontal) and Y (vertical) axes.
+        float mouseX = Input.GetAxis("Mouse X") * mouseSense * Time.deltaTime; // Horizontal mouse movement.
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSense * Time.deltaTime; // Vertical mouse movement.
+
+        // Adjust the vertical rotation (xRotation) based on the mouse's Y-axis movement.
+        xRotation -= mouseY;
+
+        // Clamp the vertical rotation to prevent the camera from flipping over.
+        xRotation = Mathf.Clamp(xRotation, topClamp, bottomClamp);
+
+        // Apply the vertical rotation to the camera by modifying its local rotation.
+        transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+
+        // Rotate the player's body horizontally based on the mouse's X-axis movement.
+        playerBody.Rotate(Vector3.up * mouseX);
+    }
+}
