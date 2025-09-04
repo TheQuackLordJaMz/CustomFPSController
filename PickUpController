@@ -1,0 +1,85 @@
+using UnityEngine;
+
+// This script allows the player to pick up, carry, and drop physics objects in the scene.
+public class PickUpController : MonoBehaviour
+{
+    [Header("Pick Up Settings")]
+    [SerializeField] private Transform holdPos; // The position where held objects are kept (usually in front of the camera)
+    private GameObject heldObj;                 // Reference to the currently held object
+    private Rigidbody heldObjRB;                // Rigidbody of the held object for physics manipulation
+
+    [Header("Physics Settings")]
+    [SerializeField] private float pickUpRange = 5.0f;   // Maximum distance at which objects can be picked up
+    [SerializeField] private float pickUpForce = 150.0f; // Force used to pull objects towards the hold position
+
+    private void Update()
+    {
+        // Check for player input to pick up or drop objects
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            if (heldObj == null) // If nothing is currently held, attempt to pick up an object
+            {
+                RaycastHit hit;
+                // Cast a ray from the camera forward to detect objects in range
+                if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, pickUpRange))
+                {
+                    PickUpObject(hit.transform.gameObject); // Attempt to pick up the hit object
+                }
+            }
+            else // If an object is currently held, drop it
+            {
+                DropObject();
+            }
+        }
+
+        // Continuously move the held object to follow the hold position
+        if (heldObj != null)
+        {
+            MoveObject();
+        }
+    }
+
+    // Moves the held object towards the hold position smoothly using physics
+    void MoveObject()
+    {
+        // Only apply force if the object is not already very close to the hold position
+        if (Vector3.Distance(heldObj.transform.position, holdPos.position) > 0.1f)
+        {
+            Vector3 moveDirection = (holdPos.position - heldObj.transform.position); // Direction towards holdPos
+            heldObjRB.AddForce(moveDirection * pickUpForce); // Pull the object towards the hold position
+        }
+    }
+
+    // Handles picking up an object
+    void PickUpObject(GameObject pickObj)
+    {
+        if (pickObj.GetComponent<Rigidbody>()) // Ensure the object has a Rigidbody
+        {
+            heldObjRB = pickObj.GetComponent<Rigidbody>();
+            heldObjRB.useGravity = false;                     // Disable gravity while held
+            heldObjRB.linearDamping = 10;                     // Dampen movement to reduce wobble
+            heldObjRB.constraints = RigidbodyConstraints.FreezeRotation; // Prevent object from spinning
+
+            heldObjRB.transform.parent = holdPos; // Parent the object to the hold position for stable following
+            heldObj = pickObj;                    // Store reference to the held object
+        }
+    }
+
+    // Handles dropping the currently held object
+    void DropObject()
+    {
+        // Re-enable physics properties
+        heldObjRB.useGravity = true;
+        heldObjRB.linearDamping = 0;        // Reset linear damping
+        heldObjRB.angularDamping = 0.05f;   // Reset angular damping
+        heldObjRB.constraints = RigidbodyConstraints.None; // Remove rotation freeze
+
+        // Stop all movement to prevent unwanted motion after dropping
+        heldObjRB.linearVelocity = Vector3.zero;
+        heldObjRB.angularVelocity = Vector3.zero;
+
+        heldObjRB.transform.parent = null; // Detach from hold position
+        heldObj = null;                    // Clear held object reference
+        heldObjRB = null;                  // Clear Rigidbody reference
+    }
+}
