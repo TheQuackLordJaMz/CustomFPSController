@@ -1,0 +1,63 @@
+using UnityEngine;
+
+// This script controls player movement using Unity's CharacterController.
+// It handles walking, jumping, and applying gravity.
+public class PlayerMovement : MonoBehaviour
+{
+    // --- Movement Variables ---
+    public float moveSpeed = 10f;   // Speed at which the player moves on the ground.
+    public float jumpHeight = 5f;   // The height the player can reach when jumping.
+    public float gravity = -9.81f;  // The gravitational force applied to the player.
+
+    // --- Physics & State Tracking ---
+    private Vector3 velocity;       // Stores the player's velocity (used for gravity & jumping).
+    private bool isGrounded;        // True if the player is currently touching the ground.
+
+    // --- Components & Ground Detection ---
+    public CharacterController cc;  // Reference to the CharacterController component (handles collisions & movement).
+    public Transform groundCheck;   // A transform positioned at the player's feet to check if grounded.
+    public float groundDist = 0.4f; // Radius of the sphere used for ground detection.
+    public LayerMask groundMask;    // Defines what counts as "ground" for collision checks.
+
+    private void Update()
+    {
+        // --- Ground Check ---
+        // Creates a sphere at groundCheck.position to see if it collides with "ground".
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundDist, groundMask);
+
+        // If the player is grounded and falling (velocity < 0), reset downward velocity.
+        // This prevents the player from "stacking" gravity and sticking into the ground.
+        if (isGrounded && velocity.y < 0)
+        {
+            velocity.y = -2f; // Keeps player anchored to the ground.
+        }
+
+        // --- Movement Input ---
+        float x = Input.GetAxis("Horizontal"); // Left/Right input (A/D or arrow keys).
+        float z = Input.GetAxis("Vertical");   // Forward/Backward input (W/S or arrow keys).
+
+        // Convert input into movement relative to the player's orientation.
+        Vector3 move = transform.right * x + transform.forward * z;
+
+        // Normalize movement to prevent diagonal speed boost.
+        move = move.normalized;
+
+        // Move the player using CharacterController.
+        cc.Move(move * moveSpeed * Time.deltaTime);
+
+        // --- Gravity Application ---
+        // Continuously apply gravity to velocity.y.
+        velocity.y += gravity * Time.deltaTime;
+
+        // Apply vertical movement (gravity/jumping) to CharacterController.
+        cc.Move(velocity * Time.deltaTime);
+
+        // --- Jumping ---
+        // Check for jump input and only allow jumping when grounded.
+        if (Input.GetButtonDown("Jump") && isGrounded)
+        {
+            // Formula for jump velocity based on height and gravity.
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+    }
+}
