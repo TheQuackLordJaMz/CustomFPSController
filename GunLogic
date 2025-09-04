@@ -1,0 +1,92 @@
+using UnityEngine;
+
+// Basic gun logic script for an FPS pistol.
+public class Gun : MonoBehaviour
+{
+    [Header("Gun Settings")]
+    public float damage = 10f;         // Damage dealt per shot
+    public float range = 100f;         // Max distance the bullet raycast can reach
+    public float fireRate = 2f;        // Shots per second (pistol = slower)
+
+    [Header("Ammo Settings")]
+    public int maxAmmo = 12;           // Magazine size
+    private int currentAmmo;           // Current ammo in the magazine
+    public float reloadTime = 1.5f;    // Time it takes to reload
+    private bool isReloading = false;
+
+    [Header("References")]
+    public Camera fpsCam;              // Reference to the player's camera
+    public ParticleSystem muzzleFlash; // Muzzle flash effect
+    public AudioSource gunSound;       // Gunshot sound
+    public GameObject impactEffect;    // Effect spawned when hitting objects
+
+    private float nextTimeToFire = 0f; // Controls fire rate timing
+
+    private void Start()
+    {
+        currentAmmo = maxAmmo; // Start with full magazine
+    }
+
+    private void Update()
+    {
+        // Prevent shooting while reloading
+        if (isReloading) return;
+
+        // If out of ammo -> reload automatically
+        if (currentAmmo <= 0)
+        {
+            StartCoroutine(Reload());
+            return;
+        }
+
+        // Left mouse button input, respects fire rate
+        if (Input.GetButton("Fire1") && Time.time >= nextTimeToFire)
+        {
+            nextTimeToFire = Time.time + 1f / fireRate; // Enforce fire rate
+            Shoot();
+        }
+    }
+
+    private void Shoot()
+    {
+        currentAmmo--;
+
+        // Play muzzle flash & sound if assigned
+        if (muzzleFlash != null) muzzleFlash.Play();
+        if (gunSound != null) gunSound.Play();
+
+        // Cast a ray from camera forward
+        RaycastHit hit;
+        if (Physics.Raycast(fpsCam.transform.position, fpsCam.transform.forward, out hit, range))
+        {
+            // Debug line (optional)
+            Debug.Log("Hit: " + hit.transform.name);
+
+            // Check if object has a Target script (apply damage)
+            Target target = hit.transform.GetComponent<Target>();
+            if (target != null)
+            {
+                target.TakeDamage(damage);
+            }
+
+            // Spawn hit effect if assigned
+            if (impactEffect != null)
+            {
+                GameObject impactGO = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
+                Destroy(impactGO, 2f);
+            }
+        }
+    }
+
+    private System.Collections.IEnumerator Reload()
+    {
+        isReloading = true;
+        Debug.Log("Reloading...");
+
+        // Wait for reload time
+        yield return new WaitForSeconds(reloadTime);
+
+        currentAmmo = maxAmmo;
+        isReloading = false;
+    }
+}
