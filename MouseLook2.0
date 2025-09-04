@@ -1,0 +1,49 @@
+using UnityEngine;
+
+// This script controls first-person style camera rotation using the mouse.
+// It handles vertical (camera) and horizontal (player body) rotation.
+public class MouseLook : MonoBehaviour
+{
+    // --- Settings ---
+    public float mouseSense = 100f;   // Mouse sensitivity multiplier (higher = faster rotation).
+
+    // --- References ---
+    public Transform playerBody;      // Reference to the player's body (rotates horizontally).
+
+    // --- Rotation Tracking ---
+    private float xRotation = 0f;     // Current vertical rotation (camera pitch).
+
+    // --- Clamping Values ---
+    public float topClamp = -90f;     // Upper vertical clamp (looking straight down).
+    public float bottomClamp = 90f;   // Lower vertical clamp (looking straight up).
+
+    private void Start()
+    {
+        // Lock the cursor to the center of the screen and hide it.
+        // This prevents the cursor from moving outside the game window during play.
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+
+    private void Update()
+    {
+        // --- Mouse Input ---
+        // Get mouse input values for horizontal (X) and vertical (Y) movement.
+        float mouseX = Input.GetAxis("Mouse X") * mouseSense * Time.deltaTime; // Horizontal input.
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSense * Time.deltaTime; // Vertical input.
+
+        // --- Vertical Rotation (Camera Pitch) ---
+        // Subtract mouseY to invert vertical control (so moving mouse up = look up).
+        xRotation -= mouseY;
+
+        // Clamp vertical rotation between topClamp and bottomClamp
+        // to prevent flipping the camera 360 degrees.
+        xRotation = Mathf.Clamp(xRotation, topClamp, bottomClamp);
+
+        // Apply vertical rotation only to the camera (this object).
+        transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+
+        // --- Horizontal Rotation (Player Yaw) ---
+        // Rotate the entire player body horizontally with mouseX input.
+        playerBody.Rotate(Vector3.up * mouseX);
+    }
+}
