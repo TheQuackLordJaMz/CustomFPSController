@@ -1,0 +1,52 @@
+using UnityEngine;
+
+public class ObjGrabbable : MonoBehaviour
+{
+    private Rigidbody objRB; // Rigidbody component of the object (used for physics interactions)
+    private Transform objGrabPointTransform; // Reference to the grab point transform (where the object should be held)
+
+    private void Awake()
+    {
+        // Cache the Rigidbody component at the start
+        objRB = GetComponent<Rigidbody>();
+    }
+
+    public void Grab(Transform objGrabPointTransform) 
+    {
+        // Store the reference to the grab point
+        this.objGrabPointTransform = objGrabPointTransform;
+
+        // Disable gravity so the object doesn’t fall while being held
+        objRB.useGravity = false;
+
+        // Make the Rigidbody kinematic so physics forces won’t affect it
+        objRB.isKinematic = true;
+    }
+
+    public void Drop() 
+    {
+        // Clear the grab point reference (object is no longer held)
+        this.objGrabPointTransform = null;
+
+        // Re-enable gravity so the object falls naturally
+        objRB.useGravity = true;
+
+        // Allow the Rigidbody to interact with physics again
+        objRB.isKinematic = false;
+    }
+
+    private void FixedUpdate()
+    {
+        // If the object is currently being held (has a grab point assigned)
+        if (objGrabPointTransform != null) 
+        {
+            float lerpSpeed = 10f; // Speed at which the object follows the grab point
+
+            // Smoothly interpolate the object's position toward the grab point
+            Vector3 newPos = Vector3.Lerp(transform.position, objGrabPointTransform.position, Time.deltaTime * lerpSpeed);
+
+            // Move the object using Rigidbody to maintain proper physics handling
+            objRB.MovePosition(newPos);
+        }
+    }
+}
