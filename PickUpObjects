@@ -1,0 +1,45 @@
+using UnityEngine;
+
+public class PlayerPickUp : MonoBehaviour
+{
+    // Allows the player to pick up and drop objects in the game world
+
+    [SerializeField] private Transform playerCamTransform; // Reference to the player's camera (used for raycasting forward)
+    [SerializeField] private LayerMask pickUpLM; // LayerMask to filter which objects can be picked up
+    [SerializeField] private Transform objGrabPointTransform; // The point where picked-up objects will be held
+
+    private ObjGrabbable objGrabbable; // Reference to the currently held object (if any)
+
+    public float pickUpDist = 2f; // Maximum distance from which the player can pick up objects
+
+    private void Update()
+    {
+        // Check if the player presses the "E" key
+        if (Input.GetKeyDown(KeyCode.E)) 
+        {
+            // If the player is not currently holding an object
+            if (objGrabbable == null)
+            {
+                // Cast a ray from the camera forward to check for pickable objects
+                if (Physics.Raycast(playerCamTransform.position, playerCamTransform.forward, out RaycastHit raycastHit, pickUpDist, pickUpLM))
+                {
+                    // Check if the object hit has an ObjGrabbable component
+                    if (raycastHit.transform.TryGetComponent(out objGrabbable))
+                    {
+                        // Call Grab() on the object and attach it to the grab point
+                        objGrabbable.Grab(objGrabPointTransform);
+
+                        // Print debug info in the console about the grabbed object
+                        Debug.Log(objGrabbable);
+                    }
+                }
+            }
+            else 
+            {
+                // If already holding an object, drop it and clear the reference
+                objGrabbable.Drop();
+                objGrabbable = null;
+            }
+        }
+    }
+}
